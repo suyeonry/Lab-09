@@ -55,40 +55,34 @@ git push -u origin master
 
 You can also complete the steps in R (replace with your paths/username when needed)
 
-```r
-# Step 1
-setwd("~/Documents")
-dir.create("PM566-labs")
-setwd("PM566-labs")
-
-# Step 2
-download.file(
-  "https://raw.githubusercontent.com/USCbiostats/PM566/master/content/assignment/05-lab.Rmd",
-  destfile = "README.Rmd"
-  )
-
-# Step 3: Happens on Github
-
-# Step 4
-system("git init && git add README.Rmd")
-system('git commit -m "First commit"')
-
-# Step 5
-system("git remote add origin git@github.com:[username]/PM566-labs")
-system("git push -u origin master")
-```
-
 Once you are done setting up the project, you can now start working with the MET data.
 
 ## Setup in R
 
+#install.packages(dtyplyr)
+
 1. Load the `data.table` (and the `dtplyr` and `dplyr` packages if you plan to work with those).
+```{r,eval=TRUE}
+library(data.table)
+library(dplyr)
+#install.packages("dtplyr")
+library(dtplyr)
+#install.packages(data.table)
+library(data.table)
+```
+
 
 2. Load the met data from https://raw.githubusercontent.com/USCbiostats/data-science-data/master/02_met/met_all.gz, and also the station data. For the later, you can use the code we used during lecture to pre-process the stations data:
 
-```{r stations-data, eval = FALSE}
+```{r, eval=TRUE}
 # Download the data
-stations <- fread("ftp://ftp.ncdc.noaa.gov/pub/data/noaa/isd-history.csv")
+
+
+getwd()
+download.file("https://raw.githubusercontent.com/USCbiostats/data-science-data/master/02_met/met_all.gz", "met_all.gz", method="libcurl", timeout = 60)
+met <- fread("met_all.gz")
+
+stations <- fread("isd-history.csv")
 stations[, USAF := as.integer(USAF)]
 
 # Dealing with NAs and 999999
@@ -111,11 +105,42 @@ stations <- stations[n == 1,][, n := NULL]
 
 ## Question 1: Representative station for the US
 
-What is the median station in terms of temperature, wind speed, and atmospheric pressure? Look for the three weather stations that best represent continental US using the `quantile()` function. Do these three coincide?
+What is the median station in terms of temperature, wind speed, and atmospheric pressure? Look for the three weather stations that best represent continental U
+S using the `quantile()` function. Do these three coincide?
 
 ```{r}
+head(stations)
+names(stations)
+
+met <-(merge(x = met, y = stations, by.x="USAFID", by.y="USAF", all.x=TRUE, all.y=FALSE))
+
+
+
+
+met_stations <- met[, .(
+  wind.sp = mean(wind.sp, na.rm=TRUE),
+  atm.press = mean(atm.press, na.rm=TRUE),
+  temp = mean(temp,na.rm=TRUE)
+),by = .(USAFID,STATE)]
+
+#computing the median
+met_stations[, temp50 :=quantile(temp,probs=0.5, na.rm=TRUE)]
+met_stations[, atmp50 :=quantile(atm.press,probs=0.5, na.rm=TRUE)]
+met_stations[, windsp50 :=quantile(wind.sp,probs=0.5, na.rm=TRUE)]
+
+met_stations
+
+#filtering the data
+met_stations[which.min(abs(temp - temp50))]
+met_stations[which.min(abs(atm.press - atmp50))]
+met_stations[which.min(abs(wind.sp - windsp50))]
+
+
+
 
 ```
+Answer : No, these three do not coincide. 
+
 
 
 Knit the document, commit your changes, and Save it on GitHub. Don't forget to add `README.md` to the tree, the first time you render it.
@@ -124,8 +149,19 @@ Knit the document, commit your changes, and Save it on GitHub. Don't forget to a
 
 Just like the previous question, you are asked to identify what is the most representative, the median, station per state. This time, instead of looking at one variable at a time, look at the euclidean distance. If multiple stations show in the median, select the one located at the lowest latitude.
 
-```{r}
 
+```{r}
+# obtaining averages per station
+met_stations <- met[, .(
+    wind.sp = mean(wind.sp, na.rm=TRUE),
+    atm.press = mean(atm.press, na.rm=TRUE),
+    temp = mean(temp,na.rm = TRUE),
+    by = USAFID)]
+
+#computing the median
+met_stations[, temp50 := quantile(temp,probs=0.5, na.rm=TRUE)]
+met_stations[, atmp50 := quantile(atm.press, probs=0.5, na.rm=TRUE)]
+met_stations[, windsp50 := quantile(wind.sp, probs=0.5, na.rm=TRUE)]
 ```
 
 Knit the doc and save it on GitHub.
