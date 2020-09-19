@@ -541,11 +541,44 @@ met_stations[which.min(abs(temp - temp50))]</code></pre>
 <div id="question-2-representative-station-per-state" class="section level2">
 <h2>Question 2: Representative station per state</h2>
 <p>Just like the previous question, you are asked to identify what is the most representative, the median, station per state. This time, instead of looking at one variable at a time, look at the euclidean distance. If multiple stations show in the median, select the one located at the lowest latitude.</p>
+<pre class="r"><code># obtaining averages per station
+met_stations &lt;- met[, .(
+    wind.sp = mean(wind.sp, na.rm=TRUE),
+    atm.press = mean(atm.press, na.rm=TRUE),
+    temp = mean(temp,na.rm = TRUE),
+    by = USAFID)]
+
+#computing the median
+met_stations[, temp50 := quantile(temp,probs=0.5, na.rm=TRUE)]
+met_stations[, atmp50 := quantile(atm.press, probs=0.5, na.rm=TRUE)]
+met_stations[, windsp50 := quantile(wind.sp, probs=0.5, na.rm=TRUE)]
+
+#filtering the data
+met_stations[which.min(abs(temp-temp50))]</code></pre>
+<pre><code>##     wind.sp atm.press     temp     by   temp50   atmp50 windsp50
+## 1: 2.459166  1014.164 23.59054 690150 23.59054 1014.164 2.459166</code></pre>
+<pre class="r"><code>met_stations[which.min(abs(atm.press-atmp50))]</code></pre>
+<pre><code>##     wind.sp atm.press     temp     by   temp50   atmp50 windsp50
+## 1: 2.459166  1014.164 23.59054 690150 23.59054 1014.164 2.459166</code></pre>
+<pre class="r"><code>met_stations[which.min(abs(wind.sp-windsp50))]</code></pre>
+<pre><code>##     wind.sp atm.press     temp     by   temp50   atmp50 windsp50
+## 1: 2.459166  1014.164 23.59054 690150 23.59054 1014.164 2.459166</code></pre>
 <p>Knit the doc and save it on GitHub.</p>
 </div>
 <div id="question-3-in-the-middle" class="section level2">
 <h2>Question 3: In the middle?</h2>
 <p>For each state, identify what is the station that is closest to the mid-point of the state. Combining these with the stations you identified in the previous question, use <code>leaflet()</code> to visualize all ~100 points in the same figure, applying different colors for those identified in this question.</p>
+<pre class="r"><code>met_stations &lt;- met[, .(
+    wind.sp = mean(wind.sp, na.rm=TRUE),
+    atm.press = mean(atm.press, na.rm=TRUE),
+    temp = mean(temp,na.rm = TRUE)),
+    by = .(USAFID, STATE)]
+
+
+#computing the median
+met_stations[, temp50s := quantile(temp,probs=0.5, na.rm=TRUE), by = STATE]
+met_stations[, atmp50s := quantile(atm.press, probs=0.5, na.rm=TRUE), by = STATE]
+met_stations[, windsp50s := quantile(wind.sp, probs=0.5, na.rm=TRUE), by = STATE]</code></pre>
 <p>Knit the doc and save it on GitHub.</p>
 </div>
 <div id="question-4-means-of-means" class="section level2">
